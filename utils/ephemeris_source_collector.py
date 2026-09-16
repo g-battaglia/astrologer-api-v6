@@ -20,6 +20,8 @@ import libephemeris
 
 # ---------------------------------------------------------------------------
 # Ephemeris body-ID → human-readable name
+# Keys are the body IDs reported by libephemeris tracing. Values are API-facing
+# body labels, not backend/source labels such as LEB, Skyfield or SPK.
 # ---------------------------------------------------------------------------
 _BODY_NAMES: Dict[int, str] = {
     -1: "Ecliptic_Nutation",  # ECL_NUT: nutation + obliquity (ERFA backend)

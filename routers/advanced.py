@@ -5,7 +5,15 @@ Endpoints for eclipses, planetary phenomena, planetary nodes, heliacal events,
 occultations, relocated charts, fixed star discovery, primary directions,
 astro-cartography, and declination aspects.
 
-All endpoints under /api/v6/advanced/*.
+Routes include /api/v6/advanced/* and predictive/return endpoints under
+/api/v6/chart/* and /api/v6/chart-data/*. Most calculations delegate to
+Kerykeion factories; shared helpers handle subject construction, transit
+sampling, rendering and bounded native searches. This module also coordinates
+range scans and response assembly. For algorithm semantics see the factory
+docstrings in the installed Kerykeion version: PrimaryDirectionsFactory (Placidus semi-arc),
+ZodiacalReleasingFactory (Hellenistic aphesis from Fortune/Spirit),
+FirdariaFactory (Persian time-lords), ProfectionsFactory (annual year-lord),
+SecondaryProgressionFactory/SolarArcFactory (symbolic predictive motion).
 """
 
 import asyncio

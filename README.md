@@ -30,6 +30,26 @@ Use one API to ship reliable astrology experiences faster — from a first proto
 - **AI-ready output** — structured context designed for LLMs, assistants, and astrology agents
 - **REST and MCP** — use the API from traditional applications or connect it directly to compatible AI tools
 
+## Quickstart
+
+Base URL `https://astrologer.p.rapidapi.com/api/v6`. Every calculation request carries your RapidAPI credentials:
+
+```bash
+curl -X POST "https://astrologer.p.rapidapi.com/api/v6/subject" \
+  -H "Content-Type: application/json" \
+  -H "X-RapidAPI-Key: YOUR_API_KEY" \
+  -H "X-RapidAPI-Host: astrologer.p.rapidapi.com" \
+  -d '{"subject": {"name": "John", "year": 1990, "month": 6, "day": 15, "hour": 14, "minute": 30, "city": "Rome", "nation": "IT", "longitude": 12.4964, "latitude": 41.9028, "timezone": "Europe/Rome"}}'
+```
+
+The service exposes `GET /health` and `GET /ready` at the host root without service authentication. Access through a gateway may have additional requirements; send both RapidAPI headers when using the RapidAPI host.
+
+During managed engine initialization, authenticated calculation requests return `503 ServiceInitializing` with `Retry-After`. REST calculation overload returns `503 ServerBusy` with `Retry-After: 2`. Use bounded retries with jitter and honor gateway quota/rate-limit responses separately.
+
+## REST and MCP
+
+Use REST (`/api/v6/chart/*`, `/api/v6/chart-data/*`, `/api/v6/context/*`) from applications. Keep your API key on a trusted backend, not in browser-delivered code. Connect AI agents through the stateless Streamable HTTP MCP endpoint `POST /api/v6/mcp/` with the same two authentication headers; `Authorization: Bearer` alone is not accepted. Raw HTTP clients must also send `Accept: application/json, text/event-stream`. Both interfaces compute with the same engine, but MCP tool failures use `isError: true` results rather than REST error statuses.
+
 ## From calculation to customer experience
 
 Astrologer API is designed for:

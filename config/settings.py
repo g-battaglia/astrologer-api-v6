@@ -1,5 +1,13 @@
 """
 This is part of Astrologer API (C) 2023 Giacomo Battaglia
+
+ASTROLOGER_CONFIG_FILE selects optional TOML defaults; an invalid explicit
+path fails at import. Pydantic settings then read environment variables and
+ASTROLOGER_ENV_FILE (default .env). Only debug and enable_tracing use the
+ASTROLOGER_DEBUG and ASTROLOGER_ENABLE_TRACING aliases; other fields use
+their field names as case-insensitive environment names. Environment values
+take precedence over dotenv values and TOML defaults. allowed_hosts and
+allowed_cors_origins are loaded here but not enforced by the application.
 """
 
 import logging
