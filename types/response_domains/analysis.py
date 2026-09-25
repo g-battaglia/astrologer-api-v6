@@ -14,7 +14,7 @@ from kerykeion.schemas import (
 )
 
 
-from ..response_models import StatusResponseModel
+from ..response_core import StatusResponseModel
 
 
 class PlanetaryNodesResponseModel(StatusResponseModel):

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from kerykeion.schemas import ClassicalPlanet
 
 
-from ..response_models import StatusResponseModel
+from ..response_core import StatusResponseModel
 
 
 class SunTimesModel(BaseModel):

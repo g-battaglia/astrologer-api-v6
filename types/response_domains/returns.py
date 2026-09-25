@@ -5,7 +5,7 @@ from typing import Literal, Optional
 from pydantic import Field
 
 
-from ..response_models import ChartResponseModel, ContextResponseModel
+from ..response_core import ChartResponseModel, ContextResponseModel
 
 
 class HeliocentricReturnContextResponseModel(ContextResponseModel):

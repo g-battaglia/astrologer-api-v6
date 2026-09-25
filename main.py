@@ -24,6 +24,7 @@ from .routers import (
     fixed_star_discovery, sun_times, moon_voc, dominants, returns, predictive,
     events, transits, ephemeris, analysis, traditional, locational, reports,
 )
+from .routers.legacy import register_legacy_v6_routes
 from .config.settings import settings
 from .mcp.server import create_mcp_server, mcp as default_mcp_server
 from .middleware.secret_key_checker_middleware import SecretKeyCheckerMiddleware, auth_is_open
@@ -425,6 +426,8 @@ def create_app(mcp_server=None) -> FastAPI:
     application.include_router(fixed_stars.router, tags=["Fixed Stars"], responses=READONLY_ERROR_RESPONSES)
     application.include_router(fixed_star_discovery.router, tags=["Fixed Stars"], responses=CALCULATION_ERROR_RESPONSES)
     application.include_router(misc.router, tags=["Miscellaneous"])
+
+    register_legacy_v6_routes(application)
 
     # Mounted directly: FastAPI routers do not propagate Starlette Mounts.
     application.mount("/api/v6/mcp", mcp_server.streamable_http_app())

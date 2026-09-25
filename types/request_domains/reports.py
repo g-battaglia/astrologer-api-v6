@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Literal, Optional
 from pydantic import Field, model_validator
-from ..request_models import StrictRequestModel, SubjectModel
+from ..request_core import StrictRequestModel, SubjectModel
 
 
 class ReportRequestModel(StrictRequestModel):

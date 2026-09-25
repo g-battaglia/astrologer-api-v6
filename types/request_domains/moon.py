@@ -7,7 +7,7 @@ from kerykeion.schemas import (
     SiderealMode,
     ZodiacType,
 )
-from ..request_models import StrictRequestModel, _check_timezone, _validate_scan_range
+from ..request_core import StrictRequestModel, _check_timezone, _validate_scan_range
 
 
 class MoonVocWindowsRequestModel(StrictRequestModel):

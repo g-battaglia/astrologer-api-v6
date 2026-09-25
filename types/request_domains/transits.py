@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Literal
 from pydantic import Field, model_validator
-from ..request_models import ChartDataConfigurationMixin, SubjectModel
+from ..request_core import ChartDataConfigurationMixin, SubjectModel
 
 
 class TransitEventsRequestModel(ChartDataConfigurationMixin):

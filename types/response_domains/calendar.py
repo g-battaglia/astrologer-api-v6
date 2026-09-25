@@ -16,7 +16,7 @@ from kerykeion import (
 )
 
 
-from ..response_models import StatusResponseModel
+from ..response_core import StatusResponseModel
 from .moon import MoonVocWindowEntryModel
 
 

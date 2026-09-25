@@ -6,7 +6,7 @@ from pydantic import Field, field_validator, model_validator
 from kerykeion.settings.config_constants import (
     DEFAULT_ACTIVE_POINTS,
 )
-from ..request_models import ActivePointName, StrictRequestModel, SubjectModel, _check_timezone, _normalize_active_points
+from ..request_core import ActivePointName, StrictRequestModel, SubjectModel, _check_timezone, _normalize_active_points
 
 
 class RelocatedChartRequestModel(StrictRequestModel):

@@ -19,7 +19,7 @@ from kerykeion.schemas import (
 )
 
 
-from ..response_models import StatusResponseModel, SolarPhaseThresholdsModel
+from ..response_core import StatusResponseModel, SolarPhaseThresholdsModel
 
 
 class EclipseSearchResponseModel(StatusResponseModel):

@@ -7,7 +7,7 @@ from kerykeion.schemas import (
     SiderealMode,
     ZodiacType,
 )
-from ..request_models import MUNDANE_ASPECT_NAMES, MUNDANE_ASPECT_POINTS, StrictRequestModel, _check_timezone, _validate_scan_range
+from ..request_core import MUNDANE_ASPECT_NAMES, MUNDANE_ASPECT_POINTS, StrictRequestModel, _check_timezone, _validate_scan_range
 
 
 class AstroCalendarRequestModel(StrictRequestModel):

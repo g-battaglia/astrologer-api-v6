@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-from ..response_models import StatusResponseModel
+from ..response_core import StatusResponseModel
 
 
 class MoonVocWindowEntryModel(BaseModel):

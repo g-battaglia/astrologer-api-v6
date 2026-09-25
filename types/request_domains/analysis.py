@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Literal, Optional
 from pydantic import Field, field_validator
-from ..request_models import StrictRequestModel, SubjectModel, _normalize_active_points
+from ..request_core import StrictRequestModel, SubjectModel, _normalize_active_points
 
 
 class PlanetaryNodesRequestModel(StrictRequestModel):

@@ -9,7 +9,7 @@ from kerykeion.schemas import (
     KerykeionGlyphSize,
 )
 from kerykeion.aspects.orb_utils import OrbAdjustmentStrategy
-from ..request_models import DistributionMethod, PointOrbAdjustmentValue, StrictRequestModel, SubjectModel, _check_point_orb_adjustments_capability, _normalize_active_points
+from ..request_core import DistributionMethod, PointOrbAdjustmentValue, StrictRequestModel, SubjectModel, _check_point_orb_adjustments_capability, _normalize_active_points
 
 
 class PrimaryDirectionsRequestModel(StrictRequestModel):

@@ -5,7 +5,7 @@ import inspect
 import json
 from datetime import datetime, timezone
 from logging import getLogger
-from typing import Any, Literal, Optional, Sequence, Union, Callable
+from typing import Any, Literal, Optional, Sequence, Union, Callable, cast
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -19,7 +19,7 @@ from kerykeion import (
     to_context,
 )
 from kerykeion import PlanetaryReturnFactory
-from kerykeion.schemas import ActiveAspect, KerykeionException
+from kerykeion.schemas import ActiveAspect, AstrologicalPoint, AstrologicalSubjectModel, KerykeionException
 from kerykeion.schemas import SingleChartDataModel, DualChartDataModel
 from kerykeion.settings.config_constants import DEFAULT_ACTIVE_POINTS
 
@@ -164,16 +164,16 @@ def resolve_nation(value: Optional[str]) -> Optional[str]:
     return value.upper()
 
 
-def resolve_active_points(points: Optional[Sequence[str]]) -> list[str]:
+def resolve_active_points(points: Optional[Sequence[str]]) -> list[AstrologicalPoint]:
     """Resolve active points, falling back to defaults if not provided."""
     if points:
-        return _normalize_active_points(list(points)) or []
+        return cast(list[AstrologicalPoint], _normalize_active_points(list(points)) or [])
     return list(DEFAULT_ACTIVE_POINTS)
 
 
 def resolve_active_aspects(
     aspects: Optional[Sequence[ActiveAspect]],
-) -> Optional[list[dict]]:
+) -> Optional[list[ActiveAspect]]:
     """Resolve active aspects from a request.
 
     Returns ``None`` when the caller did not specify aspects, so the kerykeion
@@ -183,7 +183,7 @@ def resolve_active_aspects(
     orbs onto predictive charts.
     """
     if aspects:
-        return [dict(aspect) for aspect in aspects]
+        return [cast(ActiveAspect, dict(aspect)) for aspect in aspects]
     return None
 
 
@@ -265,7 +265,7 @@ def guard_return_factory_v6_kwargs(kwargs: dict) -> None:
         )
 
 
-def build_subject(subject_request: SubjectModel, *, active_points: Optional[Sequence[str]] = None) -> object:
+def build_subject(subject_request: SubjectModel, *, active_points: Optional[Sequence[str]] = None) -> AstrologicalSubjectModel:
     """Build an AstrologicalSubject instance from a request model.
 
     If the request includes ``active_midpoints``, the resulting subject is
@@ -377,7 +377,7 @@ def build_transit_subject(
     custom_ayanamsa_t0: Optional[float] = None,
     custom_ayanamsa_ayan_t0: Optional[float] = None,
     natal_subject_request: Optional[SubjectModel] = None,
-) -> object:
+) -> AstrologicalSubjectModel:
     """Build a Transit Subject instance, inheriting settings from a reference subject.
 
     v6 calculation flags are inherited from the natal subject request when provided.

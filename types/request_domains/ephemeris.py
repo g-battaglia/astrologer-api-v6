@@ -12,7 +12,7 @@ from kerykeion.schemas import (
 from kerykeion.settings.config_constants import (
     DEFAULT_ACTIVE_POINTS,
 )
-from ..request_models import (
+from ..request_core import (
     ActivePointName,
     EPHEMERIS_MAX_POINT_CALCULATIONS,
     EPHEMERIS_MAX_SAMPLES,

@@ -157,7 +157,9 @@ async def ephemeris_data(request_body: EphemerisRequestModel, request: Request) 
             lat=request_body.latitude,
             lng=request_body.longitude,
             tz_str=request_body.timezone,
-            is_dst=request_body.is_dst,
+            # The engine annotates bool, but passes this through to localize_naive,
+            # which accepts None to reject ambiguous times. Preserve that contract.
+            is_dst=request_body.is_dst,  # type: ignore[arg-type]
             zodiac_type=request_body.zodiac_type or "Tropical",
             sidereal_mode=request_body.sidereal_mode,
             houses_system_identifier=request_body.houses_system_identifier or "P",

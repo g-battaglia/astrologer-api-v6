@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Any, Literal, Optional
 from pydantic import Field, model_validator
-from ..request_models import ChartDataConfigurationMixin, ChartRenderingMixin, LUNAR_DERIVED_POINTS, ReturnLocationModel, SubjectModel, _blank_to_none, _normalize_point_name, _validate_iso_datetime
+from ..request_core import ChartDataConfigurationMixin, ChartRenderingMixin, LUNAR_DERIVED_POINTS, ReturnLocationModel, SubjectModel, _blank_to_none, _normalize_point_name, _validate_iso_datetime
 
 
 class HeliocentricReturnRequestModel(ChartRenderingMixin):

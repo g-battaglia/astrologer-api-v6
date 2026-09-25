@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pydantic import Field
-from ..request_models import StrictRequestModel, SubjectModel
+from ..request_core import StrictRequestModel, SubjectModel
 
 
 class FixedStarDiscoveryRequestModel(StrictRequestModel):

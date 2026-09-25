@@ -3,7 +3,7 @@
 from pydantic import Field
 
 
-from ..response_models import StatusResponseModel
+from ..response_core import StatusResponseModel
 
 
 class ReportResponseModel(StatusResponseModel):
