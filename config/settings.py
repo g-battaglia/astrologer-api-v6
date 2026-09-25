@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     docs_url: str | None = config["docs_url"]
     redoc_url: str | None = config["redoc_url"]
     secret_key_names: str | list[str] = config.get("secret_key_names", config.get("secret_key_name", ""))
-    # Kill-switch for first-class fixed stars on /api/v6/advanced/ephemeris.
+    # Kill-switch for first-class fixed stars on /api/v6/ephemeris.
     # Default ON; flip via TOML or the EPHEMERIS_FIXED_STARS_ENABLED env var
     # (no deploy needed) to reject star-bearing batch requests with a 422.
     ephemeris_fixed_stars_enabled: bool = config.get("ephemeris_fixed_stars_enabled", True)

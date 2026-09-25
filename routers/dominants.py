@@ -24,10 +24,10 @@ logger = getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/api/v6/dominants", response_model=DominantsResponseModel)
+@router.post("/api/v6/analysis/dominants", response_model=DominantsResponseModel, operation_id='dominants')
 async def dominants(request_body: DominantsRequestModel, request: Request) -> JSONResponse:
     """
-    **POST** `/api/v6/dominants`
+    **POST** `/api/v6/analysis/dominants`
 
     Compute the dominants of a natal chart with the chosen ``strategy`` (``modern`` /
     ``almuten_figuris`` / ``elemental``), via kerykeion's ``DominantsFactory``.

@@ -19,7 +19,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
-from .routers import misc, charts, data, context, moon_phase, advanced, astro_calendar, fixed_stars, sun_times, moon_voc, dominants
+from .routers import (
+    misc, charts, data, context, moon_phase, astro_calendar, fixed_stars,
+    fixed_star_discovery, sun_times, moon_voc, dominants, returns, predictive,
+    events, transits, ephemeris, analysis, traditional, locational, reports,
+)
 from .config.settings import settings
 from .mcp.server import create_mcp_server, mcp as default_mcp_server
 from .middleware.secret_key_checker_middleware import SecretKeyCheckerMiddleware, auth_is_open
@@ -209,7 +213,15 @@ OPENAPI_TAGS = [
     {"name": "Sun & Planetary Hours", "description": "Sunrise, sunset, twilights and the 24 Chaldean planetary hours for a civil date and location."},
     {"name": "Void of Course Moon", "description": "Void-of-course state at a moment and VoC windows over a date range."},
     {"name": "Dominants", "description": "Chart dominants: planet, sign, element, modality and house, with selectable strategy."},
-    {"name": "Advanced", "description": "Predictive techniques, event scans and specialty calculations: progressions, directions, returns, eclipses, ephemeris tables, time-lords and more."},
+    {"name": "Returns", "description": "Heliocentric and lunar-node-crossing returns, available as charts, data and context."},
+    {"name": "Predictive", "description": "Progressions, solar arc directions and primary directions."},
+    {"name": "Events", "description": "Astronomical events and bounded searches."},
+    {"name": "Transits", "description": "Transit batches, timelines and daily aspects."},
+    {"name": "Ephemeris", "description": "Bounded ephemeris tables."},
+    {"name": "Analysis", "description": "Midpoints, declinations and planetary-node analysis."},
+    {"name": "Traditional", "description": "Time lords and horary indicators."},
+    {"name": "Locational", "description": "Relocated charts and astro-cartography."},
+    {"name": "Reports", "description": "Text reports from astrological calculations."},
     {"name": "Astro Calendar", "description": "A month-grid aggregator: ingresses, lunations, eclipses, stations, VoC windows, aspectarian, sign and retrograde periods."},
     {"name": "Fixed Stars", "description": "The fixed-star catalog usable with `subject.active_fixed_stars`."},
 ]
@@ -400,9 +412,18 @@ def create_app(mcp_server=None) -> FastAPI:
     application.include_router(sun_times.router, tags=["Sun & Planetary Hours"], responses=CALCULATION_ERROR_RESPONSES)
     application.include_router(moon_voc.router, tags=["Void of Course Moon"], responses=CALCULATION_ERROR_RESPONSES)
     application.include_router(dominants.router, tags=["Dominants"], responses=CALCULATION_ERROR_RESPONSES)
-    application.include_router(advanced.router, tags=["Advanced"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(returns.router, tags=["Returns"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(predictive.router, tags=["Predictive"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(events.router, tags=["Events"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(transits.router, tags=["Transits"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(ephemeris.router, tags=["Ephemeris"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(analysis.router, tags=["Analysis"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(traditional.router, tags=["Traditional"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(locational.router, tags=["Locational"], responses=CALCULATION_ERROR_RESPONSES)
+    application.include_router(reports.router, tags=["Reports"], responses=CALCULATION_ERROR_RESPONSES)
     application.include_router(astro_calendar.router, tags=["Astro Calendar"], responses=CALCULATION_ERROR_RESPONSES)
     application.include_router(fixed_stars.router, tags=["Fixed Stars"], responses=READONLY_ERROR_RESPONSES)
+    application.include_router(fixed_star_discovery.router, tags=["Fixed Stars"], responses=CALCULATION_ERROR_RESPONSES)
     application.include_router(misc.router, tags=["Miscellaneous"])
 
     # Mounted directly: FastAPI routers do not propagate Starlette Mounts.

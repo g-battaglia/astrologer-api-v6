@@ -71,8 +71,8 @@ of advanced astronomical and astrological features.
 - Dominants (planet, sign, element, modality, house)
 - Void-of-course Moon, sun times, planetary hours
 
-Not exposed via MCP (REST only): `/advanced/astro-calendar`,
-`/advanced/mundane-aspects`, `/advanced/moon-voc-windows`,
+Not exposed via MCP (REST only): `/calendar`,
+`/events/mundane-aspects`, `/moon/void-of-course/windows`,
 `GET /fixed-stars/catalog`, the `/context/*` variants of
 secondary-progressions / solar-arc-directions / midpoints /
 primary-directions, and the SVG charts of secondary progressions and
@@ -564,16 +564,16 @@ These tools are far more efficient than making repeated single-date calls.
         return """\
 # Advanced Features Reference
 
-All advanced tools are accessed via `/api/v6/advanced/*` endpoints.
+Advanced calculations use the domain-specific `/api/v6/*` endpoints.
 
 ## Eclipse Search
-**Endpoint:** `POST /api/v6/advanced/eclipses`
+**Endpoint:** `POST /api/v6/events/eclipses`
 Search for upcoming solar and lunar eclipses, globally or for a specific location.
 - Parameters: `latitude`, `longitude` (optional, omit for global), `start_year`, `count`
 - Returns: lists of solar and lunar eclipse events with dates, types, and magnitudes.
 
 ## Planetary Phenomena
-**Endpoint:** `POST /api/v6/advanced/planetary-phenomena`
+**Endpoint:** `POST /api/v6/events/planetary-phenomena`
 Compute observational data for planets at a given moment.
 - Parameters: `subject`, `planets` (optional filter), `solar_phase_thresholds`
   (optional half-width overrides for the morning/evening-star classification;
@@ -581,72 +581,72 @@ Compute observational data for planets at a given moment.
 - Returns: phase angle, elongation, magnitude, morning/evening star status.
 
 ## Planetary Nodes
-**Endpoint:** `POST /api/v6/advanced/planetary-nodes`
+**Endpoint:** `POST /api/v6/analysis/planetary-nodes`
 Compute orbital node positions and apsides for planets.
 - Parameters: `subject`, `method` ("mean" or "osculating"), `planets` (optional)
 - Returns: ascending/descending node longitudes, perihelion/aphelion positions.
 
 ## Heliacal Events
-**Endpoint:** `POST /api/v6/advanced/heliacal-events`
+**Endpoint:** `POST /api/v6/events/heliacal-events`
 Find heliacal rising/setting events (first/last visibility near the Sun).
 - Parameters: `subject` (location + start time), `count`, `planets` (optional),
   `event_types` (optional filter on rising/setting event kinds)
 - Returns: list of heliacal events with dates and event types.
 
 ## Occultations
-**Endpoint:** `POST /api/v6/advanced/occultations`
-**Endpoint:** `POST /api/v6/advanced/occultations/global`
+**Endpoint:** `POST /api/v6/events/occultations`
+**Endpoint:** `POST /api/v6/events/occultations/global`
 Search for occultations of a planet by the Moon.
 - Parameters: `subject`, `planet` (the occulted body, default "Venus"), `count`
 - Returns: list of occultation events. The local endpoint uses the subject's coordinates.
 
 ## Relocated Chart
-**Endpoint:** `POST /api/v6/advanced/relocated-chart`
+**Endpoint:** `POST /api/v6/locational/relocated-chart`
 Relocate a natal chart to a new geographic location. Planetary positions stay the
 same; houses and angles are recalculated for the new location.
 - Parameters: `subject`, `new_latitude`, `new_longitude`, `new_city`, `new_nation`, `new_timezone`, `active_points` (optional)
 - Returns: relocated astrological subject data.
 
 ## Fixed Star Discovery
-**Endpoint:** `POST /api/v6/advanced/fixed-star-discovery`
+**Endpoint:** `POST /api/v6/fixed-stars/discovery`
 Discover prominent fixed stars in conjunction with chart points.
 - Parameters: `subject`, `orb` (default 1.0 degrees)
 - Returns: list of stars with name, magnitude, constellation, conjuncting planet, and orb.
 
 ## Primary Directions
-**Endpoint:** `POST /api/v6/advanced/primary-directions`
+**Endpoint:** `POST /api/v6/predictive/primary-directions/analysis`
 Compute primary directions using the Placidus semi-arc method.
 - Parameters: `subject`, `max_years` (default 100), `rate_key` ("ptolemy" or "naibod"), `aspects`
 - Returns: list of directed aspects with arc and date, plus speculum table.
 
 ## Astro-Cartography
-**Endpoint:** `POST /api/v6/advanced/astro-cartography`
+**Endpoint:** `POST /api/v6/locational/astro-cartography`
 Compute ACG planetary lines showing where planets are angular on the Earth.
 - Parameters: `subject`, `step` (longitude resolution), `tolerance`, `lat_range_min/max`, `planets`
 - Returns: list of ACG lines with planet, line type (ASC/DSC/MC/IC), and coordinate points.
 
 ## Declination Aspects
-**Endpoint:** `POST /api/v6/advanced/declination-aspects`
-**Endpoint:** `POST /api/v6/advanced/declination-aspects/dual`
+**Endpoint:** `POST /api/v6/analysis/declination-aspects`
+**Endpoint:** `POST /api/v6/analysis/declination-aspects/dual`
 Compute parallel and contra-parallel aspects based on declination.
 - Parameters: `subject` (single) or `first_subject`/`second_subject` (dual), `active_points`, `orb`
 - Returns: list of declination aspects.
 
 ## Transit Events
-**Endpoint:** `POST /api/v6/advanced/transit-aspect-timeline`
+**Endpoint:** `POST /api/v6/transits/aspect-timeline`
 Compute transit events over a date range with optional exact-moment refinement.
 - Parameters: `subject`, `start_date`, `end_date`, `step_days`, `refine_exact_moments`,
   `refinement_iterations`, `active_points`, `active_aspects`
 - Returns: grouped events with applying start, exact moment, and separating end.
 
 ## Transit Moments
-**Endpoint:** `POST /api/v6/advanced/transit-daily-aspects`
+**Endpoint:** `POST /api/v6/transits/daily-aspects`
 Day-by-day snapshots of all active transit aspects within a date range.
 - Parameters: same as transit_events.
 - Returns: per-date list of active transiting aspects.
 
 ## Ephemeris
-**Endpoint:** `POST /api/v6/advanced/ephemeris`
+**Endpoint:** `POST /api/v6/ephemeris`
 Generate an ephemeris table over a date range at configurable intervals.
 - Parameters: `start_date`, `end_date`, `step_type` ("days"/"hours"/"minutes"),
   `step`, `latitude`, `longitude`, `timezone`, `is_dst`, zodiac/sidereal/house config,
@@ -654,15 +654,15 @@ Generate an ephemeris table over a date range at configurable intervals.
 - Returns: list of ephemeris data points with planetary positions and house cusps.
 
 ## Report Generation
-**Endpoint:** `POST /api/v6/advanced/report`
+**Endpoint:** `POST /api/v6/reports`
 Generate a human-readable text report for an astrological subject.
 - Parameters: `subject`, `include_aspects` (optional), `max_aspects` (optional),
   `chart_type` (optional), `second_subject` (optional, for dual-chart reports)
 - Returns: formatted text report string.
 
 ## Heliocentric Return
-**Endpoint:** `POST /api/v6/chart/heliocentric-return`
-**Endpoint:** `POST /api/v6/chart-data/heliocentric-return`
+**Endpoint:** `POST /api/v6/returns/heliocentric/chart`
+**Endpoint:** `POST /api/v6/returns/heliocentric/data`
 Compute a heliocentric return chart (planet returns to natal heliocentric longitude).
 - Parameters: `subject`, `planet`, `wheel_type` ("single" or "dual"),
   `year` or `iso_datetime` (anchor for the search), `direction` ("next" or
@@ -671,8 +671,8 @@ Compute a heliocentric return chart (planet returns to natal heliocentric longit
 - Returns: return chart data (and SVG for the chart endpoint).
 
 ## Lunar Node Crossing
-**Endpoint:** `POST /api/v6/chart/lunar-node-crossing`
-**Endpoint:** `POST /api/v6/chart-data/lunar-node-crossing`
+**Endpoint:** `POST /api/v6/returns/lunar-node-crossing/chart`
+**Endpoint:** `POST /api/v6/returns/lunar-node-crossing/data`
 Compute a lunar node crossing chart (the Moon crossing its own node,
 ecliptic latitude zero) -- the next or the previous one depending on
 `direction`.
@@ -685,27 +685,27 @@ ecliptic latitude zero) -- the next or the previous one depending on
 
 | Tool -- REST endpoint | What it computes |
 |-----------------------|------------------|
-| `get_lunations` -- `POST /api/v6/advanced/lunations` | New / First Quarter / Full / Last Quarter moments in a date range |
-| `get_retrograde_stations` -- `POST /api/v6/advanced/retrograde-stations` | Retrograde/direct stations (motion reversals) in a date range |
-| `get_sign_ingresses` -- `POST /api/v6/advanced/sign-ingresses` | Zodiac sign ingresses (30-degree boundary crossings) in a date range |
-| `get_midpoints` -- `POST /api/v6/advanced/midpoints` | Full midpoint table for a chart |
-| `get_zodiacal_releasing` -- `POST /api/v6/advanced/zodiacal-releasing` | Zodiacal releasing (aphesis) periods from Fortune or Spirit |
-| `get_profections` -- `POST /api/v6/advanced/profections` | Annual profections (Hellenistic year-lord technique) |
-| `get_firdaria` -- `POST /api/v6/advanced/firdaria` | Firdaria (Persian time-lord) periods |
-| `get_horary_indicators` -- `POST /api/v6/advanced/horary-indicators` | Horary significators and considerations before judgment |
-| `get_secondary_progressions` -- `POST /api/v6/advanced/secondary-progressions` | Day-for-a-year progressed chart for a target moment (data) |
-| `get_solar_arc_directions` -- `POST /api/v6/advanced/solar-arc-directions` | Solar arc directed chart for a target moment (data) |
-| `get_transit_batch` -- `POST /api/v6/chart-data/transit-batch` | Batch transit snapshots over a date range |
-| `get_dominants` -- `POST /api/v6/dominants` | Dominant planet, sign, element, modality, house |
-| `get_void_of_course_moon` -- `POST /api/v6/moon-voc` | Void-of-course Moon for a single moment |
-| `get_sun_times` -- `POST /api/v6/sun-times` | Sunrise, sunset, solar noon, day length |
-| `get_planetary_hours` -- `POST /api/v6/planetary-hours` | The 24 Chaldean planetary hours for a planetary day |
+| `get_lunations` -- `POST /api/v6/events/lunations` | New / First Quarter / Full / Last Quarter moments in a date range |
+| `get_retrograde_stations` -- `POST /api/v6/events/retrograde-stations` | Retrograde/direct stations (motion reversals) in a date range |
+| `get_sign_ingresses` -- `POST /api/v6/events/sign-ingresses` | Zodiac sign ingresses (30-degree boundary crossings) in a date range |
+| `get_midpoints` -- `POST /api/v6/analysis/midpoints` | Full midpoint table for a chart |
+| `get_zodiacal_releasing` -- `POST /api/v6/traditional/zodiacal-releasing` | Zodiacal releasing (aphesis) periods from Fortune or Spirit |
+| `get_profections` -- `POST /api/v6/traditional/profections` | Annual profections (Hellenistic year-lord technique) |
+| `get_firdaria` -- `POST /api/v6/traditional/firdaria` | Firdaria (Persian time-lord) periods |
+| `get_horary_indicators` -- `POST /api/v6/traditional/horary-indicators` | Horary significators and considerations before judgment |
+| `get_secondary_progressions` -- `POST /api/v6/predictive/secondary-progressions/analysis` | Day-for-a-year progressed chart for a target moment (data) |
+| `get_solar_arc_directions` -- `POST /api/v6/predictive/solar-arc-directions/analysis` | Solar arc directed chart for a target moment (data) |
+| `get_transit_batch` -- `POST /api/v6/transits/batch` | Batch transit snapshots over a date range |
+| `get_dominants` -- `POST /api/v6/analysis/dominants` | Dominant planet, sign, element, modality, house |
+| `get_void_of_course_moon` -- `POST /api/v6/moon/void-of-course` | Void-of-course Moon for a single moment |
+| `get_sun_times` -- `POST /api/v6/sun/times` | Sunrise, sunset, solar noon, day length |
+| `get_planetary_hours` -- `POST /api/v6/sun/planetary-hours` | The 24 Chaldean planetary hours for a planetary day |
 
 ## Not Exposed via MCP (REST only)
 
-- `POST /api/v6/advanced/astro-calendar` -- daily astro calendar (lunations, ingresses, VoC, sign/retrograde periods)
-- `POST /api/v6/advanced/mundane-aspects` -- sky-to-sky aspects for a moment
-- `POST /api/v6/advanced/moon-voc-windows` -- void-of-course windows over a date range
+- `POST /api/v6/calendar` -- daily astro calendar (lunations, ingresses, VoC, sign/retrograde periods)
+- `POST /api/v6/events/mundane-aspects` -- sky-to-sky aspects for a moment
+- `POST /api/v6/moon/void-of-course/windows` -- void-of-course windows over a date range
 - `GET /api/v6/fixed-stars/catalog` -- the full fixed-star catalog (1447 names)
 - the `/context/*` variants of secondary-progressions, solar-arc-directions, midpoints and primary-directions (the MCP twins return data without `include_ai_context`)
 - the SVG renderings of `/chart/secondary-progressions` and `/chart/solar-arc-directions` (the MCP tools return data only)

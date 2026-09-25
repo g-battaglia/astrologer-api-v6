@@ -14,16 +14,13 @@ from ..types.request_models import (
     NowSubjectRequestModel,
     SynastryChartDataRequestModel,
     CompositeChartDataRequestModel,
-    TransitBatchRequestModel,
     TransitChartDataRequestModel,
     PlanetaryReturnDataRequestModel,
-    _parse_iso_range_naive_utc,
 )
 from ..types.response_models import (
     ChartDataResponseModel,
     SubjectResponseModel,
     CompatibilityScoreResponseModel,
-    TransitBatchResponseModel,
 )
 from ..utils.clock import utc_now
 from ..utils.router_utils import (
@@ -292,123 +289,6 @@ async def transit_chart_data(request_body: TransitChartDataRequestModel, request
         return await handle_exception(exc, request)
 
 
-@router.post("/api/v6/chart-data/transit-batch", response_model=TransitBatchResponseModel)
-async def transit_batch_data(request_body: TransitBatchRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/chart-data/transit-batch`
-
-    Batch transit calculation: computes transit chart data for every date
-    in a range, using the same logic as `/chart-data/transit`. Each sampled
-    day's transit moment is 12:00 local time at the transit location.
-
-    **Parameters:**
-    - `first_subject`: Natal subject.
-    - `start_date`, `end_date`: ISO date range (at most 366 sampled dates).
-    - `step_days`: Days between samples (1-30, default 1).
-    - `location`: Optional transit-location override; latitude, longitude and
-      timezone must be provided together (city/nation are independent). When
-      omitted, the natal location is used.
-    - `active_points` / `active_aspects` and the other chart-data options.
-
-    **Returns:**
-    - `status`: "OK"
-    - `results`: Array of per-day `{date, chart_data}` entries in a single
-      HTTP response.
-    """
-    log_request_with_body(logger, request, "Transit batch request", request_body.model_dump_json())
-
-    try:
-        from datetime import timedelta
-        from types import SimpleNamespace
-        from kerykeion import ChartDataFactory
-        from ..utils.router_utils import (
-            resolve_active_aspects,
-            normalize_coordinate,
-            resolve_nation,
-            build_transit_subject,
-        )
-
-        def _work() -> dict:
-            active_points = resolve_active_points(request_body.active_points)
-            active_aspects = resolve_active_aspects(request_body.active_aspects)
-            natal_subject = build_subject(request_body.first_subject, active_points=active_points)
-
-            # Same naive-UTC normalization the validator applies to its own
-            # copies — re-parsing raw strings would make a tz-aware start
-            # incomparable with a naive end (TypeError → 500).
-            start_dt, end_dt = _parse_iso_range_naive_utc(request_body.start_date, request_body.end_date)
-            step = timedelta(days=request_body.step_days)
-
-            # Transit location: use override or natal
-            loc = request_body.location
-            t_city = loc.city if loc and loc.city else natal_subject.city
-            t_nation = resolve_nation(loc.nation) if loc and loc.nation else natal_subject.nation
-            t_lng = normalize_coordinate(loc.longitude) if loc and loc.longitude is not None else natal_subject.lng
-            t_lat = normalize_coordinate(loc.latitude) if loc and loc.latitude is not None else natal_subject.lat
-            t_tz = loc.timezone if loc and loc.timezone else natal_subject.tz_str
-
-            results = []
-            current = start_dt
-            while current <= end_dt:
-                # Build the transit ring through the shared helper so batch stays
-                # in lock-step with the single-date /chart-data/transit path: it
-                # inherits the natal subject's sidereal_mode + USER custom-ayanamsa
-                # pair and the v6 calc flags (active_fixed_stars, dignities, …).
-                # Without the ayanamsa pair a sidereal 'USER' batch would raise.
-                transit_request = SimpleNamespace(
-                    name="Transit",
-                    year=current.year,
-                    month=current.month,
-                    day=current.day,
-                    hour=12,
-                    minute=0,
-                    second=0,
-                    city=t_city,
-                    nation=t_nation,
-                    longitude=t_lng,
-                    latitude=t_lat,
-                    timezone=t_tz,
-                    geonames_username=None,
-                    is_dst=None,
-                    altitude=None,
-                )
-                transit_sub = build_transit_subject(
-                    transit_request,
-                    reference_subject=natal_subject,
-                    active_points=active_points,
-                    custom_ayanamsa_t0=request_body.first_subject.custom_ayanamsa_t0,
-                    custom_ayanamsa_ayan_t0=request_body.first_subject.custom_ayanamsa_ayan_t0,
-                    natal_subject_request=request_body.first_subject,
-                )
-
-                chart_data = ChartDataFactory.create_chart_data(
-                    "Transit",
-                    natal_subject,
-                    transit_sub,
-                    active_points=active_points,
-                    active_aspects=active_aspects,
-                    include_house_comparison=request_body.include_house_comparison,
-                    axis_orb_limit=request_body.axis_orb_limit,
-                    point_orb_adjustments=request_body.point_orb_adjustments,
-                    point_orb_adjustment_strategy=request_body.point_orb_adjustment_strategy,
-                    distribution_method=request_body.distribution_method,
-                    custom_distribution_weights=request_body.custom_distribution_weights,
-                )
-
-                results.append(
-                    {
-                        "date": current.isoformat(),
-                        "chart_data": dump(chart_data),
-                    }
-                )
-                current += step
-
-            return {"status": "OK", "results": results}
-
-        payload = await run_heavy(_work)
-        return JSONResponse(content=payload, status_code=200)
-    except Exception as exc:
-        return await handle_exception(exc, request)
 
 
 @router.post("/api/v6/chart-data/solar-return", response_model=ChartDataResponseModel)

@@ -7,70 +7,28 @@ this handler only adapts the request and serialises the resulting model.
 """
 
 from logging import getLogger
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from kerykeion import VoidOfCourseMoonFactory
-from kerykeion.schemas import (
-    VoidOfCourseAspectModel,
-    VoidOfCourseMoonModel,
-    VoidOfCourseWindowModel,
-)
 
 from ..types.request_models import MoonVocRequestModel, MoonVocWindowsRequestModel
 from ..types.response_models import MoonVocResponseModel, MoonVocWindowsResponseModel
 from ..utils.logging_utils import log_request_with_body
-from ..utils.router_utils import handle_exception, iso_utc, local_iso, run_heavy
+from ..utils.router_utils import handle_exception, run_heavy
+from ..utils.astronomy_payloads import _moon_voc_payload, _window_payload
 
 logger = getLogger(__name__)
 
 router = APIRouter()
 
 
-def _aspect_payload(aspect: Optional[VoidOfCourseAspectModel], tz: Optional[ZoneInfo]) -> Optional[dict]:
-    """Serialise an aspect event to the API JSON shape, or ``None``.
-
-    ``time_local`` is ``None`` when no timezone is available (the windows range
-    endpoint makes the timezone optional; the single-moment endpoint always has one).
-    """
-    if aspect is None:
-        return None
-    return {
-        "planet": aspect.planet,
-        "aspect": aspect.aspect,
-        "degrees": aspect.aspect_degrees,
-        "time": iso_utc(aspect.exact_time),
-        "time_local": local_iso(aspect.exact_time, tz) if tz else None,
-    }
-
-
-def _moon_voc_payload(model: VoidOfCourseMoonModel, tz: ZoneInfo) -> dict:
-    """Serialise a kerykeion ``VoidOfCourseMoonModel`` to the API JSON shape."""
-    return {
-        "status": "OK",
-        "moon_voc": {
-            "is_void": model.is_void_of_course,
-            "moon_sign": model.moon_sign,
-            "next_sign": model.next_sign,
-            "ingress": iso_utc(model.ingress),
-            "ingress_local": local_iso(model.ingress, tz),
-            "void_start": iso_utc(model.void_start),
-            "void_start_local": local_iso(model.void_start, tz),
-            "void_end": iso_utc(model.void_end),
-            "void_end_local": local_iso(model.void_end, tz),
-            "last_aspect": _aspect_payload(model.last_aspect, tz),
-            "next_aspect": _aspect_payload(model.next_aspect, tz),
-        },
-    }
-
-
-@router.post("/api/v6/moon-voc", response_model=MoonVocResponseModel)
+@router.post("/api/v6/moon/void-of-course", response_model=MoonVocResponseModel, operation_id="moonVoc")
 async def moon_voc(request_body: MoonVocRequestModel, request: Request) -> JSONResponse:
     """
-    **POST** `/api/v6/moon-voc`
+    **POST** `/api/v6/moon/void-of-course`
 
     Void-of-course Moon for a moment, computed by kerykeion's
     ``VoidOfCourseMoonFactory``. The Moon is *void of course* once it has perfected
@@ -101,24 +59,10 @@ async def moon_voc(request_body: MoonVocRequestModel, request: Request) -> JSONR
         return await handle_exception(exc, request)
 
 
-def _window_payload(window: VoidOfCourseWindowModel, tz: Optional[ZoneInfo]) -> dict:
-    """Serialise a void window to the API JSON shape (local fields only with a tz)."""
-    return {
-        "moon_sign": window.moon_sign,
-        "next_sign": window.next_sign,
-        "void_start": iso_utc(window.void_start),
-        "void_start_local": local_iso(window.void_start, tz) if tz else None,
-        "void_end": iso_utc(window.void_end),
-        "void_end_local": local_iso(window.void_end, tz) if tz else None,
-        "duration_minutes": window.duration_minutes,
-        "last_aspect": _aspect_payload(window.last_aspect, tz),
-    }
-
-
-@router.post("/api/v6/advanced/moon-voc-windows", response_model=MoonVocWindowsResponseModel)
+@router.post("/api/v6/moon/void-of-course/windows", response_model=MoonVocWindowsResponseModel, operation_id="advancedMoonVocWindows")
 async def moon_voc_windows(request_body: MoonVocWindowsRequestModel, request: Request) -> JSONResponse:
     """
-    **POST** `/api/v6/advanced/moon-voc-windows`
+    **POST** `/api/v6/moon/void-of-course/windows`
 
     Every void-of-course Moon window intersecting a date range, computed by
     kerykeion's ``VoidOfCourseMoonFactory.from_iso_range``. Each window runs from

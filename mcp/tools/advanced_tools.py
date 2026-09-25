@@ -57,8 +57,7 @@ from ...utils.router_utils import (
 
 # REST payload reshapers shared with the routers so MCP and REST emit
 # identical shapes (moon-voc, sun-times, planetary-hours parity).
-from ...routers.moon_voc import _moon_voc_payload
-from ...routers.sun_times import _planetary_hours_payload, _sun_times_payload
+from ...utils.astronomy_payloads import _moon_voc_payload, _planetary_hours_payload, _sun_times_payload
 from .core_tools import (
     _build_subject_from_model,
     _build_return_factory_from_model,
@@ -183,7 +182,7 @@ def register_advanced_tools(mcp: Any) -> None:
                 "status": "OK",
                 "solar_eclipses": solar,
                 "lunar_eclipses": lunar,
-                # REST parity (/api/v6/advanced/eclipses): echo the search
+                # REST parity (/api/v6/events/eclipses): echo the search
                 # location (null for a global search).
                 "latitude": getattr(result, "latitude", latitude),
                 "longitude": getattr(result, "longitude", longitude),
@@ -218,7 +217,7 @@ def register_advanced_tools(mcp: Any) -> None:
         try:
             subj = await run_heavy(_build_subject_from_model, subject)
             # Held back unless the caller sent it (REST parity,
-            # app/routers/advanced.py): an engine that predates the keyword
+            # the domain REST routers): an engine that predates the keyword
             # answers an unknown kwarg with a TypeError, i.e. a dead tool
             # rather than an ignored option.
             extra_kwargs: dict[str, Any] = {}
@@ -785,7 +784,7 @@ def register_advanced_tools(mcp: Any) -> None:
                 custom_ayanamsa_ayan_t0=custom_ayanamsa_ayan_t0,
                 is_dst=is_dst if is_dst is not None else False,
                 # Mirror the tool-level cap so the factory's own limits agree
-                # with the points check above (REST parity: advanced.py passes
+                # with the points check above (REST parity: the REST router passes
                 # EPHEMERIS_MAX_POINTS; kerykeion's defaults are 730/8760).
                 max_days=MAX_EPHEMERIS_POINTS,
                 max_hours=MAX_EPHEMERIS_POINTS,
@@ -838,7 +837,7 @@ def register_advanced_tools(mcp: Any) -> None:
                 kwargs["max_aspects"] = max_aspects
 
             def _build_report_model():
-                # Mirrors the REST /api/v6/advanced/report handler: a bare
+                # Mirrors the REST /api/v6/reports handler: a bare
                 # subject never renders an aspect table in kerykeion's
                 # ReportGenerator, so chart data is built whenever aspects are
                 # requested (or a chart_type is given).
@@ -1709,7 +1708,7 @@ def register_advanced_tools(mcp: Any) -> None:
         Returns ``moon_voc`` with is_void, moon_sign, next_sign, ingress /
         ingress_local, void_start / void_start_local, void_end / void_end_local,
         and last_aspect / next_aspect (each with planet, aspect, degrees, time,
-        time_local) — the same shape as the REST ``/api/v6/moon-voc`` endpoint.
+        time_local) — the same shape as the REST ``/api/v6/moon/void-of-course`` endpoint.
         """
         try:
             # Mirror the REST MoonVocRequestModel validation: a sidereal_mode
@@ -1731,7 +1730,7 @@ def register_advanced_tools(mcp: Any) -> None:
                 sidereal_mode=sidereal_mode,
             )
 
-            # Same reshaping as the REST /api/v6/moon-voc handler.
+            # Same reshaping as the REST /api/v6/moon/void-of-course handler.
             payload = _moon_voc_payload(model, ZoneInfo(timezone))
             return _strip_nulls(payload) if omit_nulls else payload
 
@@ -1759,7 +1758,7 @@ def register_advanced_tools(mcp: Any) -> None:
         the event does not occur (e.g. rise/set on polar day/night). Times are UTC
         ISO-8601 with ``_local`` companions (HH:MM for rise/set/noon, full ISO for
         twilight); ``day_length`` is "H:MM" — the same shape as the REST
-        ``/api/v6/sun-times`` endpoint.
+        ``/api/v6/sun/times`` endpoint.
         """
         try:
             model = await run_heavy(
@@ -1772,7 +1771,7 @@ def register_advanced_tools(mcp: Any) -> None:
                 tz_str=timezone,
             )
 
-            # Same reshaping as the REST /api/v6/sun-times handler.
+            # Same reshaping as the REST /api/v6/sun/times handler.
             payload = _sun_times_payload(model)
             return _strip_nulls(payload) if omit_nulls else payload
 
@@ -1805,7 +1804,7 @@ def register_advanced_tools(mcp: Any) -> None:
         Returns ``planetary_hours`` with day_ruler, current_index, current_ruler,
         current_is_day, sunrise/sunset/next_sunrise (UTC ISO-8601) and the 24
         ``hours`` (index, ruler, is_day, start, end) — the same shape as the REST
-        ``/api/v6/planetary-hours`` endpoint.
+        ``/api/v6/sun/planetary-hours`` endpoint.
         """
         try:
             model = await run_heavy(
@@ -1820,7 +1819,7 @@ def register_advanced_tools(mcp: Any) -> None:
                 tz_str=timezone,
             )
 
-            # Same reshaping as the REST /api/v6/planetary-hours handler.
+            # Same reshaping as the REST /api/v6/sun/planetary-hours handler.
             payload = _planetary_hours_payload(model)
             return _strip_nulls(payload) if omit_nulls else payload
 

@@ -36,8 +36,7 @@ from ..types.request_models import AstroCalendarRequestModel
 from ..types.response_models import AstroCalendarResponseModel
 from ..utils.logging_utils import log_request_with_body
 from ..utils.router_utils import dump, handle_exception, run_heavy
-from .moon_voc import _window_payload
-from .sun_times import _planetary_hours_payload, _sun_times_payload
+from ..utils.astronomy_payloads import _window_payload, _planetary_hours_payload, _sun_times_payload
 
 logger = getLogger(__name__)
 
@@ -46,7 +45,15 @@ router = APIRouter()
 # Default aspectarian body set (Sun..Pluto); the Moon is appended when
 # include_moon_aspects is true. Mirrors the kerykeion factory default.
 _ASPECTARIAN_DEFAULT_POINTS = (
-    "Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+    "Sun",
+    "Mercury",
+    "Venus",
+    "Mars",
+    "Jupiter",
+    "Saturn",
+    "Uranus",
+    "Neptune",
+    "Pluto",
 )
 
 # Ingress layer: the finder's own default (Sun..Pluto); the Moon joins on request.
@@ -83,8 +90,7 @@ def _civil_dates(start_utc: datetime, end_utc: datetime, tz: ZoneInfo) -> "list[
     return days
 
 
-def _day_payload(civil_date: date, latitude: float, longitude: float, tz_str: str,
-                 want_sun: bool, want_hours: bool) -> dict:
+def _day_payload(civil_date: date, latitude: float, longitude: float, tz_str: str, want_sun: bool, want_hours: bool) -> dict:
     """Sun times + planetary hours for one civil date (CPU work, call via run_heavy).
 
     A per-layer failure (e.g. polar day/night edge the factories cannot frame)
@@ -94,8 +100,12 @@ def _day_payload(civil_date: date, latitude: float, longitude: float, tz_str: st
     if want_sun:
         try:
             sun_times_model = SunTimesFactory.from_date(
-                civil_date.year, civil_date.month, civil_date.day,
-                latitude=latitude, longitude=longitude, tz_str=tz_str,
+                civil_date.year,
+                civil_date.month,
+                civil_date.day,
+                latitude=latitude,
+                longitude=longitude,
+                tz_str=tz_str,
             )
             payload["sun_times"] = _sun_times_payload(sun_times_model)["sun_times"]
         except KerykeionException:
@@ -105,8 +115,14 @@ def _day_payload(civil_date: date, latitude: float, longitude: float, tz_str: st
             # Noon guarantees the moment falls inside this date's planetary day
             # (sunrise -> next sunrise), whatever the season.
             planetary_hours_model = PlanetaryHoursFactory.from_datetime(
-                civil_date.year, civil_date.month, civil_date.day, 12, 0,
-                latitude=latitude, longitude=longitude, tz_str=tz_str,
+                civil_date.year,
+                civil_date.month,
+                civil_date.day,
+                12,
+                0,
+                latitude=latitude,
+                longitude=longitude,
+                tz_str=tz_str,
             )
             payload["planetary_hours"] = _planetary_hours_payload(planetary_hours_model)["planetary_hours"]
         except KerykeionException:
@@ -114,10 +130,10 @@ def _day_payload(civil_date: date, latitude: float, longitude: float, tz_str: st
     return payload
 
 
-@router.post("/api/v6/advanced/astro-calendar", response_model=AstroCalendarResponseModel)
+@router.post("/api/v6/calendar", response_model=AstroCalendarResponseModel, operation_id="advancedAstroCalendar")
 async def astro_calendar(request_body: AstroCalendarRequestModel, request: Request) -> JSONResponse:
     """
-    **POST** `/api/v6/advanced/astro-calendar`
+    **POST** `/api/v6/calendar`
 
     Everything an astrological calendar month needs, in one call: sign
     ingresses (the Sun's cardinal crossings carry equinox/solstice markers),
@@ -168,7 +184,7 @@ async def astro_calendar(request_body: AstroCalendarRequestModel, request: Reque
 
         # Each layer runs on the bounded heavy pool; awaiting between layers
         # releases EPHEMERIS_LOCK and keeps the event loop responsive (the
-        # same idea as advanced.py's _scan_chunked).
+        # same idea as the event scan helper).
         if request_body.include_ingresses:
             ingress_planets = list(_INGRESS_PLANETS)
             if request_body.include_moon_ingresses:
@@ -198,20 +214,14 @@ async def astro_calendar(request_body: AstroCalendarRequestModel, request: Reque
             # from Jan 1 of the range's start year always covers a <=45-day
             # window inside that year (max 7 eclipses per calendar year).
             # Filter to the range in-handler.
-            result = await run_heavy(
-                EclipseFactory.search_global, start_year=start_utc.year, count=10, **zodiac_kwargs
-            )
+            result = await run_heavy(EclipseFactory.search_global, start_year=start_utc.year, count=10, **zodiac_kwargs)
             # Filter on maximum_jd: JD(UT) bounds derived from the same naive-UTC
             # range the other layers use (JD 2440587.5 = 1970-01-01T00:00Z).
             _EPOCH = datetime(1970, 1, 1)
             start_jd = 2440587.5 + (start_utc - _EPOCH).total_seconds() / 86400.0
             end_jd = 2440587.5 + (end_utc - _EPOCH).total_seconds() / 86400.0
-            content["solar_eclipses"] = [
-                dump(e) for e in result.solar_eclipses if start_jd <= e.maximum_jd <= end_jd
-            ]
-            content["lunar_eclipses"] = [
-                dump(e) for e in result.lunar_eclipses if start_jd <= e.maximum_jd <= end_jd
-            ]
+            content["solar_eclipses"] = [dump(e) for e in result.solar_eclipses if start_jd <= e.maximum_jd <= end_jd]
+            content["lunar_eclipses"] = [dump(e) for e in result.lunar_eclipses if start_jd <= e.maximum_jd <= end_jd]
             await asyncio.sleep(0)
 
         if request_body.include_retrograde_stations:

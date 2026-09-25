@@ -8,13 +8,6 @@ from logging import getLogger
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from kerykeion import (
-    MidpointFactory,
-    PrimaryDirectionsFactory,
-    SecondaryProgressionFactory,
-    SolarArcFactory,
-)
-from kerykeion import to_context
 
 from ..types.request_models import (
     BirthDataRequestModel,
@@ -23,38 +16,23 @@ from ..types.request_models import (
     CompositeChartDataRequestModel,
     TransitChartDataRequestModel,
     PlanetaryReturnDataRequestModel,
-    HeliocentricReturnContextRequestModel,
-    LunarNodeCrossingContextRequestModel,
     NowSubjectRequestModel,
-    MidpointsRequestModel,
-    PrimaryDirectionsRequestModel,
-    SecondaryProgressionsRequestModel,
-    SolarArcDirectionsRequestModel,
 )
 from ..types.response_models import (
     SubjectContextResponseModel,
     ContextResponseModel,
-    HeliocentricReturnContextResponseModel,
-    LunarNodeCrossingContextResponseModel,
-    MidpointsContextResponseModel,
-    PrimaryDirectionsContextResponseModel,
     ReturnContextResponseModel,
-    SecondaryProgressionsContextResponseModel,
-    SolarArcContextResponseModel,
 )
 from ..utils.clock import utc_now
 from ..utils.router_utils import (
     build_now_subject,
     build_subject,
     calculate_return_chart_data,
-    calculate_heliocentric_return_chart_data,
-    calculate_lunar_node_crossing_chart_data,
     context_payload,
     create_natal_chart_data,
     create_synastry_chart_data,
     create_composite_chart_data,
     create_transit_chart_data,
-    dump,
     handle_exception,
     parse_precomputed_chart_data,
     resolve_active_points,
@@ -313,72 +291,8 @@ async def lunar_return_context(request_body: PlanetaryReturnDataRequestModel, re
         return await handle_exception(exc, request)
 
 
-@router.post("/api/v6/context/heliocentric-return", response_model=HeliocentricReturnContextResponseModel)
-async def heliocentric_return_context(request_body: HeliocentricReturnContextRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/context/heliocentric-return`
-
-    Returns AI-optimized context for a heliocentric return chart.
-
-    Supports two modes:
-    - **Pre-computed mode**: provide `chart_data` to skip calculation.
-    - **Compute mode**: provide `subject` + `planet` + `year`/`iso_datetime`.
-
-    **Returns:**
-    - `status`: "OK"
-    - `context`: AI-optimized context string
-    - `chart_data`: ChartDataModel
-    - `return_type`: "Heliocentric"
-    - `planet`: Planet name (compute mode)
-    - `wheel_type`: "dual" | "single"
-    """
-    log_request_with_body(logger, request, "Heliocentric return context request", request_body.model_dump_json())
-
-    try:
-        if request_body.chart_data is not None:
-            chart_data = await run_heavy(parse_precomputed_chart_data, request_body.chart_data)
-        else:
-            chart_data = await run_heavy(calculate_heliocentric_return_chart_data, request_body)
-        payload = await run_heavy(context_payload, chart_data)
-        payload["return_type"] = "Heliocentric"
-        payload["planet"] = request_body.planet
-        payload["wheel_type"] = request_body.wheel_type
-        return JSONResponse(content=payload, status_code=200)
-    except Exception as exc:  # pragma: no cover - defensive
-        return await handle_exception(exc, request)
 
 
-@router.post("/api/v6/context/lunar-node-crossing", response_model=LunarNodeCrossingContextResponseModel)
-async def lunar_node_crossing_context(request_body: LunarNodeCrossingContextRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/context/lunar-node-crossing`
-
-    Returns AI-optimized context for a lunar node crossing chart.
-
-    Supports two modes:
-    - **Pre-computed mode**: provide `chart_data` to skip calculation.
-    - **Compute mode**: provide `subject` + `year`/`iso_datetime`.
-
-    **Returns:**
-    - `status`: "OK"
-    - `context`: AI-optimized context string
-    - `chart_data`: ChartDataModel
-    - `return_type`: "Lunar_Node_Crossing"
-    - `wheel_type`: "dual" | "single"
-    """
-    log_request_with_body(logger, request, "Lunar node crossing context request", request_body.model_dump_json())
-
-    try:
-        if request_body.chart_data is not None:
-            chart_data = await run_heavy(parse_precomputed_chart_data, request_body.chart_data)
-        else:
-            chart_data = await run_heavy(calculate_lunar_node_crossing_chart_data, request_body)
-        payload = await run_heavy(context_payload, chart_data)
-        payload["return_type"] = "Lunar_Node_Crossing"
-        payload["wheel_type"] = request_body.wheel_type
-        return JSONResponse(content=payload, status_code=200)
-    except Exception as exc:  # pragma: no cover - defensive
-        return await handle_exception(exc, request)
 
 
 @router.post("/api/v6/now/context", response_model=SubjectContextResponseModel)
@@ -417,155 +331,3 @@ async def now_context(request_body: NowSubjectRequestModel, request: Request) ->
 # ===========================================================================
 # Phase 2 Predictive Context Endpoints
 # ===========================================================================
-
-
-@router.post("/api/v6/context/secondary-progressions", response_model=SecondaryProgressionsContextResponseModel)
-async def secondary_progressions_context(request_body: SecondaryProgressionsRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/context/secondary-progressions`
-
-    Compute the day-for-a-year progressed chart and return AI-optimized context.
-
-    Note: this endpoint serialises the progressed *subject* (via ``to_context``),
-    which does not include a progressed-to-natal aspect table. The aspect-tuning
-    and chart-data fields on the request model (``compute_aspects``,
-    ``aspect_orb``, ``aspects``, ``point_orb_adjustments``,
-    ``point_orb_adjustment_strategy``, ``axis_orb_limit``,
-    ``distribution_method``, ``custom_distribution_weights``,
-    ``include_house_comparison``) and the rendering fields (``theme``, ``style``,
-    ``glyph_size``, ``transparent_background`` and the ``show_*`` flags)
-    therefore only affect the ``/chart`` and ``/chart-data``
-    secondary-progression endpoints, not this context path. ``active_points``
-    IS honored: it selects the points calculated on the natal and progressed
-    subjects. (Unlike solar-arc, whose factory returns an aspect-bearing
-    subject model that ``to_context`` can render.)
-    """
-    log_request_with_body(logger, request, "Secondary progressions context request", request_body.model_dump_json())
-
-    try:
-        subject = await run_heavy(build_subject, request_body.subject, active_points=request_body.active_points)
-        progressed = await run_heavy(
-            SecondaryProgressionFactory.compute,
-            subject,
-            target_iso_utc_datetime=request_body.target_iso_utc_datetime,
-            target_year=request_body.target_year,
-        )
-        return JSONResponse(
-            content={
-                "status": "OK",
-                "context": to_context(progressed),
-                "progressed_subject": dump(progressed),
-            },
-            status_code=200,
-        )
-    except Exception as exc:  # pragma: no cover
-        return await handle_exception(exc, request)
-
-
-@router.post("/api/v6/context/solar-arc-directions", response_model=SolarArcContextResponseModel)
-async def solar_arc_context(request_body: SolarArcDirectionsRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/context/solar-arc-directions`
-
-    Compute solar arc directions and return AI-optimized context.
-    """
-    log_request_with_body(logger, request, "Solar arc context request", request_body.model_dump_json())
-
-    try:
-        subject = await run_heavy(build_subject, request_body.subject, active_points=request_body.active_points)
-        result = await run_heavy(
-            SolarArcFactory.compute,
-            subject,
-            target_iso_utc_datetime=request_body.target_iso_utc_datetime,
-            target_year=request_body.target_year,
-            active_points=request_body.active_points,
-            compute_aspects=request_body.compute_aspects,
-            aspect_orb=request_body.aspect_orb,
-            aspects=request_body.aspects,
-            point_orb_adjustments=request_body.point_orb_adjustments,
-            point_orb_adjustment_strategy=request_body.point_orb_adjustment_strategy,
-        )
-        return JSONResponse(
-            content={
-                "status": "OK",
-                "context": to_context(result),
-                "solar_arc_subject": dump(result),
-            },
-            status_code=200,
-        )
-    except Exception as exc:  # pragma: no cover
-        return await handle_exception(exc, request)
-
-
-@router.post("/api/v6/context/midpoints", response_model=MidpointsContextResponseModel)
-async def midpoints_context(request_body: MidpointsRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/context/midpoints`
-
-    Compute the midpoint table and return AI-optimized context.
-    """
-    log_request_with_body(logger, request, "Midpoints context request", request_body.model_dump_json())
-
-    try:
-        subject = await run_heavy(build_subject, request_body.subject)
-        result = await run_heavy(
-            MidpointFactory.compute,
-            subject,
-            active_points=request_body.active_points,
-            compute_aspects=request_body.compute_aspects,
-            aspect_orb=request_body.aspect_orb,
-            aspects=request_body.aspects,
-        )
-        # MidpointFactory.compute returns an empty list when fewer than 2 of the
-        # requested points resolve on the subject; to_context raises on empty
-        # lists ("element type is ambiguous"), which would surface as a 500.
-        # Mirror /advanced/midpoints, which returns the empty list as a 200.
-        return JSONResponse(
-            content={
-                "status": "OK",
-                "context": to_context(result) if result else "No midpoints could be computed: fewer than two of the requested points are available on the subject.",
-                "midpoints": dump(result),
-            },
-            status_code=200,
-        )
-    except Exception as exc:  # pragma: no cover
-        return await handle_exception(exc, request)
-
-
-@router.post("/api/v6/context/primary-directions", response_model=PrimaryDirectionsContextResponseModel)
-async def primary_directions_context(request_body: PrimaryDirectionsRequestModel, request: Request) -> JSONResponse:
-    """
-    **POST** `/api/v6/context/primary-directions`
-
-    Compute primary directions and return AI-optimized context.
-    """
-    log_request_with_body(logger, request, "Primary directions context request", request_body.model_dump_json())
-
-    try:
-        subject = await run_heavy(build_subject, request_body.subject)
-        directions = await run_heavy(
-            PrimaryDirectionsFactory.compute,
-            subject,
-            max_years=request_body.max_years,
-            rate_key=request_body.rate_key,
-            aspects=request_body.aspects,
-        )
-        speculum = await run_heavy(PrimaryDirectionsFactory.compute_speculum, subject)
-
-        directions_xml = ["<primary_directions_analysis>"]
-        for d in directions:
-            directions_xml.append(f'  <direction promissor="{d.promissor}" significator="{d.significator}" aspect="{d.aspect}" arc="{d.arc:.4f}" years="{d.direction_years:.2f}" />')
-        directions_xml.append("</primary_directions_analysis>")
-        context = "\n".join(directions_xml)
-
-        return JSONResponse(
-            content={
-                "status": "OK",
-                "context": context,
-                "directions": dump(directions),
-                "speculum": dump(speculum),
-            },
-            status_code=200,
-        )
-    except Exception as exc:  # pragma: no cover
-        return await handle_exception(exc, request)
