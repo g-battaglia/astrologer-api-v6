@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from kerykeion.schemas import (
     AstrologicalSubjectModel,
     DualChartDataModel,
+    MoonPhaseLocationModel,
     MoonPhaseOverviewModel,
     RelationshipScoreAspectModel,
     SingleChartDataModel,
@@ -183,17 +184,30 @@ class ContextResponseModel(StatusResponseModel):
     chart_data: Union[SingleChartDataModel, DualChartDataModel] = Field(description="Serialized chart data payload.")
 
 
+class PublicMoonPhaseLocationModel(MoonPhaseLocationModel):
+    """Wire format after location_precision rounding (the engine's fields are strings)."""
+
+    latitude: float | None = None
+    longitude: float | None = None
+
+
+class PublicMoonPhaseOverviewModel(MoonPhaseOverviewModel):
+    """The service serializes moon-phase coordinates as JSON numbers."""
+
+    location: PublicMoonPhaseLocationModel | None = None
+
+
 class MoonPhaseResponseModel(StatusResponseModel):
     """Response payload for moon phase details."""
 
-    moon_phase_overview: MoonPhaseOverviewModel = Field(description="Detailed moon phase overview including illumination, upcoming phases, eclipses, and sun info.")
+    moon_phase_overview: PublicMoonPhaseOverviewModel = Field(description="Detailed moon phase overview including illumination, upcoming phases, eclipses, and sun info.")
 
 
 class MoonPhaseContextResponseModel(StatusResponseModel):
     """Response payload for moon phase details with AI-optimized context."""
 
     context: str = Field(description="AI-optimized XML context string for the moon phase overview.")
-    moon_phase_overview: MoonPhaseOverviewModel = Field(description="Detailed moon phase overview including illumination, upcoming phases, eclipses, and sun info.")
+    moon_phase_overview: PublicMoonPhaseOverviewModel = Field(description="Detailed moon phase overview including illumination, upcoming phases, eclipses, and sun info.")
 
 
 class ReturnContextResponseModel(ContextResponseModel):
